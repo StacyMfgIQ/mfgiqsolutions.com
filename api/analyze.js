@@ -3,6 +3,10 @@
  * Vercel Serverless Function (/api/analyze)
  */
 
+// SheetJS must be available as a global before fileParser.js is required
+const XLSX = require('xlsx');
+global.XLSX = XLSX;
+
 const { createClient } = require('@supabase/supabase-js');
 const { ingestFiles, formatIngestionReport } = require('../MfgIQJs_ToolFiles/ingestionOrchestrator');
 const { runSWOTAnalysis } = require('../MfgIQJs_ToolFiles/swotEngine (1)');
@@ -36,6 +40,7 @@ module.exports = async function handler(req, res) {
   );
 
   const { data: { user }, error: authErr } = await sb.auth.getUser(token);
+
   if (authErr || !user) {
     return res.status(401).json({ error: 'Invalid or expired session' });
   }
@@ -49,11 +54,13 @@ module.exports = async function handler(req, res) {
 
   // Security: files must belong to this user
   const unauthorized = filePaths.find(p => !p.startsWith(`${user.id}/`));
+
   if (unauthorized) {
     return res.status(403).json({ error: 'Access denied to one or more files' });
   }
 
   try {
+
     // ── Download files from Supabase Storage ──────────────────────────────
     const fileObjects = await Promise.all(
       filePaths.map(async (path) => {
@@ -65,6 +72,7 @@ module.exports = async function handler(req, res) {
 
         const buffer = Buffer.from(await data.arrayBuffer());
         const name   = path.split('/').pop().replace(/^\d+_/, '');
+
         return { name, buffer };
       })
     );
@@ -113,6 +121,7 @@ module.exports = async function handler(req, res) {
       error: err.message || 'Analysis failed — please try again.',
     });
   }
+
 };
 
 function getDomainSummary(bundle) {

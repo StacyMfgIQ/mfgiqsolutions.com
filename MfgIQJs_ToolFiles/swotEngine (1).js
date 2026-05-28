@@ -12,7 +12,7 @@ const { buildERPSummary }     = require('./erpModule');
 
 /**
  * Runs a full SWOT analysis on normalized manufacturing data.
- *
+ *h
  * @param {Object} dataBundle - Keyed sections of normalized data
  * @param {Object[]} [dataBundle.sales]      - CRM / quote records
  * @param {Object[]} [dataBundle.ar]         - AR invoice records
@@ -79,13 +79,18 @@ Rules:
       "anthropic-version": "2023-06-01"
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
+      model: "claude-opus-4-5",
       max_tokens: 1500,
       messages: [{ role: "user", content: prompt }]
     })
   });
 
-  const data = await response.json();
+  if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        console.error('[MfgIQ] Claude API error:', response.status, JSON.stringify(errBody));
+        throw new Error(`Claude API returned ${response.status}: ${errBody?.error?.message || JSON.stringify(errBody)}`);
+  }
+    const data = await response.json();
   const text = data.content.map(b => b.text || "").join("").trim();
 
   try {

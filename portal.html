@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MfgIQ Solutions — Customer Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+
+/* ── RESET & BASE ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:      #1A2E44;
+  --navy-mid:  #243d58;
+  --navy-deep: #111f2e;
+  --green:     #4A7C59;
+  --green-l:   #6aab7a;
+  --green-ll:  #e8f2ec;
+  --charcoal:  #2C2C2A;
+  --gray:      #6B6B6B;
+  --lgray:     #f1efe8;
+  --rule:      #d4d4d0;
+  --white:     #ffffff;
+  --off:       #F8F7F4;
+  --amber:     #854F0B;
+  --red:       #a32d2d;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--off);
+  color: var(--charcoal);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── NAV ───────────────────────────────────────────────────────────────── */
+nav {
+  background: rgba(26,46,68,0.98);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-wordmark { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--white); }
+.nav-wordmark span { color: var(--green-l); }
+.nav-sub { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-top: 1px; }
+.nav-right { display: flex; align-items: center; gap: 20px; }
+.nav-user { font-size: 12px; color: rgba(255,255,255,.5); font-family: 'DM Mono', monospace; }
+.nav-signout {
+  font-size: 12px; font-weight: 500; color: rgba(255,255,255,.5);
+  background: none; border: 1px solid rgba(255,255,255,.15);
+  padding: 6px 14px; border-radius: 5px; cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.nav-signout:hover { border-color: rgba(255,255,255,.4); color: var(--white); }
+
+/* ── AUTH SCREEN ───────────────────────────────────────────────────────── */
+#auth-screen {
+  min-height: calc(100vh - 60px);
+  background: var(--navy-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  position: relative;
+  overflow: hidden;
+}
+#auth-screen::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(74,124,89,.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.auth-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+}
+.auth-eyebrow {
+  font-size: 10px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--green-l); margin-bottom: 10px;
+}
+.auth-card h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; font-weight: 700; color: var(--white);
+  line-height: 1.2; margin-bottom: 8px;
+}
+.auth-card p {
+  font-size: 13.5px; color: rgba(255,255,255,.5); margin-bottom: 32px; line-height: 1.6;
+}
+.auth-tabs {
+  display: flex; gap: 0; margin-bottom: 28px;
+  border: 1px solid rgba(255,255,255,.1); border-radius: 8px; overflow: hidden;
+}
+.auth-tab {
+  flex: 1; padding: 10px; font-size: 13px; font-weight: 600;
+  background: transparent; border: none; cursor: pointer;
+  color: rgba(255,255,255,.4); transition: background .2s, color .2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.auth-tab.active { background: var(--green); color: var(--white); }
+
+.form-group { margin-bottom: 18px; }
+.form-label {
+  display: block; font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: rgba(255,255,255,.5); margin-bottom: 7px;
+}
+.form-input {
+  width: 100%; padding: 12px 14px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 7px; font-size: 14px; color: var(--white);
+  font-family: 'DM Sans', sans-serif; outline: none;
+  transition: border-color .2s;
+}
+.form-input::placeholder { color: rgba(255,255,255,.25); }
+.form-input:focus { border-color: var(--green-l); }
+
+.btn-submit {
+  width: 100%; padding: 13px; background: var(--green);
+  color: var(--white); border: none; border-radius: 8px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background .2s, transform .15s;
+  margin-top: 6px;
+}
+.btn-submit:hover { background: var(--green-l); transform: translateY(-1px); }
+.btn-submit:disabled { background: rgba(74,124,89,.4); cursor: not-allowed; transform: none; }
+
+.auth-message {
+  margin-top: 14px; padding: 10px 14px; border-radius: 6px;
+  font-size: 12.5px; display: none;
+}
+.auth-message.error { background: rgba(163,45,45,.2); border: 1px solid rgba(163,45,45,.3); color: #f08080; }
+.auth-message.success { background: rgba(74,124,89,.15); border: 1px solid rgba(74,124,89,.3); color: var(--green-l); }
+
+/* ── PORTAL SCREEN ─────────────────────────────────────────────────────── */
+#portal-screen { display: none; padding: 40px; max-width: 1100px; margin: 0 auto; }
+
+.portal-header { margin-bottom: 36px; }
+.portal-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; font-weight: 700; color: var(--navy); margin-bottom: 6px;
+}
+.portal-header p { font-size: 14px; color: var(--gray); }
+
+/* ── DASHBOARD GRID ────────────────────────────────────────────────────── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+@media (max-width: 780px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+/* ── UPLOAD CARD ───────────────────────────────────────────────────────── */
+.card {
+  background: var(--white); border: 1px solid var(--rule);
+  border-radius: 12px; padding: 28px;
+}
+.card-title {
+  font-size: 13px; font-weight: 700; color: var(--navy);
+  letter-spacing: .04em; text-transform: uppercase; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title::before {
+  content: ''; width: 3px; height: 16px;
+  background: var(--green); border-radius: 2px; display: block;
+}
+
+.dropzone {
+  border: 2px dashed var(--rule); border-radius: 10px;
+  padding: 32px 20px; text-align: center;
+  cursor: pointer; transition: border-color .2s, background .2s;
+  position: relative;
+}
+.dropzone:hover, .dropzone.drag-over {
+  border-color: var(--green-l); background: var(--green-ll);
+}
+.dropzone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+}
+.dropzone-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--green-ll); border: 1px solid rgba(74,124,89,.2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+}
+.dropzone h4 { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+.dropzone p { font-size: 12px; color: var(--gray); }
+.dropzone-hint {
+  font-size: 10.5px; color: var(--gray); margin-top: 10px;
+  font-family: 'DM Mono', monospace;
+}
+
+.file-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.file-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; background: var(--lgray); border-radius: 7px;
+  font-size: 12.5px;
+}
+.file-item-name { color: var(--charcoal); font-weight: 500; }
+.file-item-size { color: var(--gray); font-family: 'DM Mono', monospace; font-size: 11px; }
+.file-remove {
+  background: none; border: none; cursor: pointer; color: var(--gray);
+  font-size: 16px; line-height: 1; padding: 0 4px;
+  transition: color .15s;
+}
+.file-remove:hover { color: var(--red); }
+
+.btn-run {
+  width: 100%; margin-top: 18px; padding: 14px;
+  background: var(--navy); color: var(--white);
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: background .2s, transform .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-run:hover { background: var(--navy-mid); transform: translateY(-1px); }
+.btn-run:disabled { background: rgba(26,46,68,.35); cursor: not-allowed; transform: none; }
+
+/* ── INSTRUCTIONS CARD ─────────────────────────────────────────────────── */
+.step-list { display: flex; flex-direction: column; gap: 14px; }
+.step-row { display: flex; gap: 14px; align-items: flex-start; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--navy); color: var(--white);
+  font-size: 13px; font-weight: 700; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  font-family: 'Playfair Display', serif;
+}
+.step-text h5 { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 2px; }
+.step-text p { font-size: 12px; color: var(--gray); line-height: 1.5; }
+
+.file-types {
+  margin-top: 18px; padding: 14px 16px;
+  background: var(--green-ll); border: 1px solid rgba(74,124,89,.2);
+  border-radius: 8px;
+}
+.file-types h5 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--green); margin-bottom: 8px; }
+.file-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.file-type-item { font-size: 11.5px; color: var(--charcoal); font-family: 'DM Mono', monospace; }
+
+/* ── PROGRESS / STATUS ─────────────────────────────────────────────────── */
+.analysis-status {
+  background: var(--navy-deep); border-radius: 12px;
+  padding: 28px; margin-bottom: 24px; display: none;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.status-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+}
+.status-spinner {
+  width: 20px; height: 20px; border: 2px solid rgba(106,171,122,.3);
+  border-top-color: var(--green-l); border-radius: 50%;
+  animation: spin 0.8s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.status-title { font-size: 14px; font-weight: 600; color: var(--white); }
+.status-steps { display: flex; flex-direction: column; gap: 8px; }
+.status-step {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12.5px; color: rgba(255,255,255,.4);
+  transition: color .3s;
+}
+.status-step.active { color: var(--green-l); }
+.status-step.done { color: rgba(255,255,255,.6); }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.15); flex-shrink: 0; transition: background .3s;
+}
+.status-step.active .status-dot { background: var(--green-l); }
+.status-step.done .status-dot { background: rgba(255,255,255,.4); }
+
+/* ── SWOT REPORT ───────────────────────────────────────────────────────── */
+#report-section { display: none; }
+
+.report-header {
+  background: var(--navy-deep); border-radius: 12px;
+  padding: 28px 32px; margin-bottom: 24px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.report-meta {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: rgba(255,255,255,.4); margin-bottom: 10px;
+}
+.report-summary {
+  font-size: 15px; color: rgba(255,255,255,.8); line-height: 1.65; margin-bottom: 16px;
+}
+.report-priority {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(74,124,89,.15); border: 1px solid rgba(74,124,89,.3);
+  border-radius: 8px; padding: 10px 16px;
+}
+.priority-label {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--green-l);
+}
+.priority-text { font-size: 13.5px; color: rgba(255,255,255,.85); font-weight: 500; }
+
+.swot-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-bottom: 24px;
+}
+@media (max-width: 680px) { .swot-grid { grid-template-columns: 1fr; } }
+
+.swot-quad {
+  background: var(--white); border: 1px solid var(--rule);
+  border-radius: 12px; padding: 24px; position: relative; overflow: hidden;
+}
+.swot-quad::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+}
+.swot-quad.strengths::before  { background: var(--green); }
+.swot-quad.weaknesses::before { background: var(--red); }
+.swot-quad.opportunities::before { background: #4a7c9c; }
+.swot-quad.threats::before    { background: var(--amber); }
+
+.swot-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+.swot-quad.strengths .swot-label    { color: var(--green); }
+.swot-quad.weaknesses .swot-label   { color: var(--red); }
+.swot-quad.opportunities .swot-label { color: #4a7c9c; }
+.swot-quad.threats .swot-label      { color: var(--amber); }
+
+.swot-findings { display: flex; flex-direction: column; gap: 12px; }
+.swot-finding { }
+.finding-text { font-size: 13.5px; color: var(--charcoal); line-height: 1.5; margin-bottom: 4px; }
+.finding-metric {
+  font-size: 11px; font-family: 'DM Mono', monospace; color: var(--gray);
+  padding: 3px 8px; background: var(--lgray);
+  border-radius: 4px; display: inline-block;
+}
+
+/* ── REPORT HISTORY ────────────────────────────────────────────────────── */
+.history-card { margin-top: 8px; }
+.history-empty {
+  text-align: center; padding: 28px;
+  font-size: 13px; color: var(--gray); font-style: italic;
+}
+.history-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid var(--rule);
+}
+.history-item:last-child { border-bottom: none; }
+.history-date { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--gray); }
+.history-summary { font-size: 13px; color: var(--charcoal); margin-top: 2px; }
+.history-load {
+  font-size: 12px; font-weight: 600; color: var(--green);
+  background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  padding: 6px 12px; border-radius: 5px; border: 1px solid var(--green);
+  transition: background .15s, color .15s;
+}
+.history-load:hover { background: var(--green); color: var(--white); }
+
+/* ── UTILITY ───────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--navy); color: var(--white);
+  padding: 12px 20px; border-radius: 8px; font-size: 13px;
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  transition: opacity .3s; z-index: 999;
+}
+.toast.hide { opacity: 0; pointer-events: none; }
+
+</style>
+</head>
+<body>
+
+<!-- ── NAV ───────────────────────────────────────────────────────────── -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <svg width="28" height="28" viewBox="0 0 38 38" fill="none">
+      <path d="M19 2L35 11V27L19 36L3 27V11L19 2Z" fill="#1A2E44"/>
+      <rect x="10" y="18" width="5" height="12" rx="1.5" fill="white" opacity="0.6"/>
+      <rect x="17" y="13" width="5" height="17" rx="1.5" fill="#4A7C59"/>
+      <rect x="24" y="10" width="5" height="20" rx="1.5" fill="#4A7C59" opacity="0.8"/>
+    </svg>
+    <div>
+      <div class="nav-wordmark">Mfg<span>IQ</span></div>
+      <div class="nav-sub">Customer Portal</div>
+    </div>
+  </a>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-email"></span>
+    <button class="nav-signout hidden" id="signout-btn">Sign out</button>
+  </div>
+</nav>
+
+<!-- ── AUTH SCREEN ────────────────────────────────────────────────────── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-eyebrow">MfgIQ Solutions</div>
+    <h1>Your intelligence<br>dashboard.</h1>
+    <p>Upload your data files and get your SWOT analysis — specific numbers, actionable findings, delivered in minutes.</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchTab('signup')">Create Account</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input type="email" class="form-input" id="login-email" placeholder="you@yourcompany.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-submit" id="login-btn" onclick="handleLogin()">Sign In</button>
+      <div class="auth-message" id="login-msg"></div>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="signup-form" class="hidden">
+      <div class="form-group">
+        <label class="form-label">Company name</label>
+        <input type="text" class="form-input" id="signup-company" placeholder="Acme Precision Mfg">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input type="email" class="form-input" id="signup-email" placeholder="you@yourcompany.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="signup-password" placeholder="At least 8 characters" autocomplete="new-password">
+      </div>
+      <button class="btn-submit" id="signup-btn" onclick="handleSignup()">Create Account</button>
+      <div class="auth-message" id="signup-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PORTAL SCREEN ──────────────────────────────────────────────────── -->
+<div id="portal-screen">
+
+  <div class="portal-header">
+    <h2>Welcome back.</h2>
+    <p>Upload your latest data files to run a fresh SWOT analysis, or view a previous report below.</p>
+  </div>
+
+  <!-- Analysis status bar -->
+  <div class="analysis-status" id="analysis-status">
+    <div class="status-header">
+      <div class="status-spinner"></div>
+      <div class="status-title">Analyzing your data — this takes about 30 seconds…</div>
+    </div>
+    <div class="status-steps">
+      <div class="status-step active" id="step-upload"><div class="status-dot"></div>Uploading files to secure storage</div>
+      <div class="status-step" id="step-parse"><div class="status-dot"></div>Parsing and mapping your columns</div>
+      <div class="status-step" id="step-route"><div class="status-dot"></div>Routing data to the right domains</div>
+      <div class="status-step" id="step-swot"><div class="status-dot"></div>Running SWOT analysis with Claude</div>
+      <div class="status-step" id="step-save"><div class="status-dot"></div>Saving report to your account</div>
+    </div>
+  </div>
+
+  <!-- SWOT Report -->
+  <div id="report-section">
+    <div class="report-header">
+      <div class="report-meta" id="report-meta"></div>
+      <div class="report-summary" id="report-summary"></div>
+      <div class="report-priority">
+        <span class="priority-label">Top Priority This Week</span>
+        <span class="priority-text" id="report-priority"></span>
+      </div>
+    </div>
+    <div class="swot-grid">
+      <div class="swot-quad strengths">
+        <div class="swot-label">Strengths</div>
+        <div class="swot-findings" id="swot-strengths"></div>
+      </div>
+      <div class="swot-quad weaknesses">
+        <div class="swot-label">Weaknesses</div>
+        <div class="swot-findings" id="swot-weaknesses"></div>
+      </div>
+      <div class="swot-quad opportunities">
+        <div class="swot-label">Opportunities</div>
+        <div class="swot-findings" id="swot-opportunities"></div>
+      </div>
+      <div class="swot-quad threats">
+        <div class="swot-label">Threats</div>
+        <div class="swot-findings" id="swot-threats"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard cards -->
+  <div class="dashboard-grid">
+
+    <!-- Upload Card -->
+    <div class="card">
+      <div class="card-title">Upload Your Data Files</div>
+
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="file-input" multiple accept=".xlsx,.xls,.csv,.json,.xml,.qbo">
+        <div class="dropzone-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 3v10M6 7l4-4 4 4" stroke="#4A7C59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 14v1a2 2 0 002 2h10a2 2 0 002-2v-1" stroke="#4A7C59" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h4>Drop files here or click to browse</h4>
+        <p>QuickBooks exports, ERP data, CRM reports, Excel files</p>
+        <div class="dropzone-hint">xlsx · xls · csv · qbo · json · xml</div>
+      </div>
+
+      <div class="file-list" id="file-list"></div>
+
+      <button class="btn-run" id="run-btn" disabled onclick="runAnalysis()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Run SWOT Analysis
+      </button>
+    </div>
+
+    <!-- Instructions + History -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- How it works -->
+      <div class="card">
+        <div class="card-title">How It Works</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-text">
+              <h5>Upload your files</h5>
+              <p>Drop in exports from QuickBooks, your ERP, CRM, or any Excel file. No cleanup needed first.</p>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-text">
+              <h5>Click Run Analysis</h5>
+              <p>Our engine parses, maps, and routes your data across all four domains automatically.</p>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-text">
+              <h5>Get your SWOT report</h5>
+              <p>Specific numbers, real findings, and your top priority action for the week — in about 30 seconds.</p>
+            </div>
+          </div>
+        </div>
+        <div class="file-types">
+          <h5>Accepted data types</h5>
+          <div class="file-type-grid">
+            <span class="file-type-item">QuickBooks (.qbo)</span>
+            <span class="file-type-item">ERP work orders</span>
+            <span class="file-type-item">AR/AP aging</span>
+            <span class="file-type-item">Sales / CRM data</span>
+            <span class="file-type-item">Inventory files</span>
+            <span class="file-type-item">Delivery records</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report history -->
+      <div class="card history-card">
+        <div class="card-title">Previous Reports</div>
+        <div id="history-list">
+          <div class="history-empty">No reports yet — run your first analysis above.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast hide" id="toast"></div>
+
+<script>
+// ─── CONFIGURATION ────────────────────────────────────────────────────────────
+// STEP 1: Replace these two values with your Supabase project credentials.
+// You'll find them in your Supabase project → Settings → API
+const SUPABASE_URL  = 'https://meeowqsdmreyjpvzzotq.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZW93cXNkbXJleWpwdnp6b3RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA1NzAsImV4cCI6MjA5NTQ4NjU3MH0.DAdz5cwsKQ3rb9UDmQl1LnplswivPyPguYlQqsD3o00';
+
+// STEP 2: Replace with your Vercel deployment URL (after you deploy the API)
+const API_URL = 'https://mfgiqsolutions-com.vercel.app';
+
+// ─── INIT SUPABASE ────────────────────────────────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let currentUser  = null;
+let selectedFiles = [];
+let currentReport = null;
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    showPortal();
+  } else {
+    showAuth();
+  }
+
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      showPortal();
+    }
+    if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      showAuth();
+    }
+  });
+})();
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+function showAuth() {
+  document.getElementById('auth-screen').style.display  = 'flex';
+  document.getElementById('portal-screen').style.display = 'none';
+  document.getElementById('signout-btn').classList.add('hidden');
+  document.getElementById('nav-email').textContent = '';
+}
+
+function showPortal() {
+  document.getElementById('auth-screen').style.display  = 'none';
+  document.getElementById('portal-screen').style.display = 'block';
+  document.getElementById('signout-btn').classList.remove('hidden');
+  document.getElementById('nav-email').textContent = currentUser?.email || '';
+  loadHistory();
+}
+
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('login-form').classList.toggle('hidden', !isLogin);
+  document.getElementById('signup-form').classList.toggle('hidden', isLogin);
+  document.querySelectorAll('.auth-tab').forEach((t, i) => {
+    t.classList.toggle('active', isLogin ? i === 0 : i === 1);
+  });
+}
+
+async function handleLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn      = document.getElementById('login-btn');
+  const msg      = document.getElementById('login-msg');
+
+  if (!email || !password) { showMsg(msg, 'error', 'Please enter your email and password.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    showMsg(msg, 'error', error.message === 'Invalid login credentials'
+      ? 'Email or password is incorrect.' : error.message);
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
+
+async function handleSignup() {
+  const company  = document.getElementById('signup-company').value.trim();
+  const email    = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const btn      = document.getElementById('signup-btn');
+  const msg      = document.getElementById('signup-msg');
+
+  if (!company || !email || !password) { showMsg(msg, 'error', 'Please fill in all fields.'); return; }
+  if (password.length < 8) { showMsg(msg, 'error', 'Password must be at least 8 characters.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+
+  const { error } = await sb.auth.signUp({
+    email, password,
+    options: { data: { company_name: company } }
+  });
+
+  if (error) {
+    showMsg(msg, 'error', error.message);
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  } else {
+    showMsg(msg, 'success', 'Account created! Check your email to confirm, then sign in.');
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+}
+
+document.getElementById('signout-btn').addEventListener('click', () => sb.auth.signOut());
+
+// ─── FILE HANDLING ─────────────────────────────────────────────────────────────
+const dropzone  = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+
+fileInput.addEventListener('change', (e) => addFiles(Array.from(e.target.files)));
+
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  addFiles(Array.from(e.dataTransfer.files));
+});
+
+function addFiles(newFiles) {
+  newFiles.forEach(f => {
+    if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
+  });
+  renderFileList();
+}
+
+function removeFile(name) {
+  selectedFiles = selectedFiles.filter(f => f.name !== name);
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('file-list');
+  const btn  = document.getElementById('run-btn');
+
+  list.innerHTML = selectedFiles.map(f => `
+    <div class="file-item">
+      <span class="file-item-name">${f.name}</span>
+      <span style="display:flex;align-items:center;gap:8px;">
+        <span class="file-item-size">${formatBytes(f.size)}</span>
+        <button class="file-remove" onclick="removeFile('${f.name}')" title="Remove">×</button>
+      </span>
+    </div>
+  `).join('');
+
+  btn.disabled = selectedFiles.length === 0;
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+// ─── RUN ANALYSIS ─────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  if (!selectedFiles.length) return;
+
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+
+  // Show progress
+  setAnalysisStep('upload');
+  document.getElementById('analysis-status').style.display = 'block';
+  document.getElementById('report-section').style.display  = 'none';
+  document.getElementById('portal-screen').scrollIntoView({ behavior: 'smooth' });
+
+  try {
+    // Step 1: Upload files to Supabase Storage
+    const uploadedPaths = [];
+    for (const file of selectedFiles) {
+      const path = `${currentUser.id}/${Date.now()}_${file.name}`;
+      const { error } = await sb.storage.from('customer-files').upload(path, file);
+      if (error) throw new Error(`Upload failed: ${error.message}`);
+      uploadedPaths.push(path);
+    }
+    setAnalysisStep('parse');
+
+    // Step 2: Call analysis API with file paths
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${API_URL}/api/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        filePaths:   uploadedPaths,
+        companyName: currentUser.user_metadata?.company_name || 'your company',
+        userId:      currentUser.id,
+      }),
+    });
+
+    setAnalysisStep('route');
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `API error ${res.status}`);
+    }
+
+    setAnalysisStep('swot');
+    const report = await res.json();
+
+    // Step 3: Save report to Supabase
+    setAnalysisStep('save');
+    const { error: saveErr } = await sb.from('reports').insert({
+      user_id:    currentUser.id,
+      report:     report,
+      file_names: selectedFiles.map(f => f.name),
+      created_at: new Date().toISOString(),
+    });
+    if (saveErr) console.warn('Report save warning:', saveErr.message);
+
+    // Show report
+    setTimeout(() => {
+      document.getElementById('analysis-status').style.display = 'none';
+      renderReport(report, selectedFiles.map(f => f.name));
+      loadHistory();
+      selectedFiles = [];
+      renderFileList();
+      showToast('Analysis complete!');
+    }, 600);
+
+  } catch (err) {
+    document.getElementById('analysis-status').style.display = 'none';
+    btn.disabled = false;
+    showToast('Analysis failed: ' + err.message, true);
+    console.error(err);
+  }
+}
+
+function setAnalysisStep(step) {
+  const steps = ['upload','parse','route','swot','save'];
+  const idx   = steps.indexOf(step);
+  steps.forEach((s, i) => {
+    const el = document.getElementById(`step-${s}`);
+    if (!el) return;
+    el.className = 'status-step' + (i < idx ? ' done' : i === idx ? ' active' : '');
+  });
+}
+
+// ─── REPORT RENDERING ─────────────────────────────────────────────────────────
+function renderReport(report, fileNames) {
+  document.getElementById('report-section').style.display = 'block';
+  document.getElementById('report-meta').textContent =
+    `Analysis run ${new Date().toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })}  ·  Sources: ${fileNames.join(', ')}`;
+  document.getElementById('report-summary').textContent  = report.summary   || '';
+  document.getElementById('report-priority').textContent = report.top_priority || '';
+
+  renderFindings('swot-strengths',    report.strengths    || []);
+  renderFindings('swot-weaknesses',   report.weaknesses   || []);
+  renderFindings('swot-opportunities',report.opportunities|| []);
+  renderFindings('swot-threats',      report.threats      || []);
+
+  currentReport = report;
+  document.getElementById('report-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderFindings(elId, findings) {
+  document.getElementById(elId).innerHTML = findings.map(f => `
+    <div class="swot-finding">
+      <div class="finding-text">${f.finding}</div>
+      ${f.metric ? `<span class="finding-metric">${f.metric}</span>` : ''}
+    </div>
+  `).join('') || '<div style="font-size:13px;color:var(--gray);font-style:italic;">No findings in this quadrant.</div>';
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const { data, error } = await sb
+    .from('reports')
+    .select('id, created_at, report, file_names')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  const container = document.getElementById('history-list');
+
+  if (error || !data?.length) {
+    container.innerHTML = '<div class="history-empty">No reports yet — run your first analysis above.</div>';
+    return;
+  }
+
+  container.innerHTML = data.map(row => {
+    const date    = new Date(row.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const summary = row.report?.summary ? row.report.summary.slice(0, 90) + '…' : 'SWOT analysis';
+    return `
+      <div class="history-item">
+        <div>
+          <div class="history-date">${date}</div>
+          <div class="history-summary">${summary}</div>
+        </div>
+        <button class="history-load" onclick='loadReport(${JSON.stringify(row)})'>View</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function loadReport(row) {
+  const fileNames = row.file_names || ['historical report'];
+  renderReport(row.report, fileNames);
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function showMsg(el, type, text) {
+  el.className = `auth-message ${type}`;
+  el.textContent = text;
+  el.style.display = 'block';
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? 'rgba(163,45,45,0.95)' : 'var(--navy)';
+  t.classList.remove('hide');
+  setTimeout(() => t.classList.add('hide'), 3500);
+}
+
+// Enter key support
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  if (!document.getElementById('login-form').classList.contains('hidden')) handleLogin();
+  else if (!document.getElementById('signup-form').classList.contains('hidden')) handleSignup();
+});
+</script>
+</body>
+</html>

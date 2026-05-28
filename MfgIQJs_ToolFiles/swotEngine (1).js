@@ -6,6 +6,7 @@
 
 const { buildFinanceSummary } = require('./financeModule');
 const { buildERPSummary }     = require('./erpModule');
+
 // Ingestion orchestrator produces the DataBundle that feeds this engine:
 // const { ingestFiles } = require('./ingestionOrchestrator');
 
@@ -29,9 +30,9 @@ const { buildERPSummary }     = require('./erpModule');
  * @param {string}   [options.companyName]   - Optional company name for context
  * @returns {Promise<SWOTResult>}
  */
+
 async function runSWOTAnalysis(dataBundle, options = {}) {
   const { topN = 3, companyName = "the company" } = options;
-
   const sections = buildDataSummary(dataBundle);
 
   const prompt = `You are a business intelligence analyst specializing in local manufacturing companies.
@@ -43,6 +44,7 @@ Every finding must reference actual numbers or patterns from the data.
 ${sections}
 
 Return ONLY a JSON object in this exact structure (no preamble, no markdown):
+
 {
   "strengths": [
     { "finding": "...", "metric": "...", "source": "sales|finance|operations|logistics" }
@@ -173,6 +175,7 @@ function buildDataSummary(dataBundle) {
   const hasERP = dataBundle.workOrders?.length || dataBundle.bom?.length ||
                  dataBundle.inventory?.length  || dataBundle.capacity?.length ||
                  dataBundle.quality?.length    || dataBundle.deliveries?.length;
+
   if (hasERP) {
     const erpSummary = buildERPSummary({
       workOrders: dataBundle.workOrders || [],
@@ -193,12 +196,11 @@ function buildDataSummary(dataBundle) {
       (r.quantity_ordered || 0) > (r.quantity_on_hand || 0) + (r.work_in_progress_qty || 0)
     );
     const readyToShip = o.filter(r => r.order_status?.toLowerCase() === "ready");
-
     parts.push(`## OPERATIONS DATA (${o.length} open orders)
 - Orders with materials shortfall: ${shortfalls.length}
 - Orders ready to ship: ${readyToShip.length}
 - Total orders in progress: ${o.filter(r => r.order_status?.toLowerCase() === "in progress").length}`);
-  } // end legacy operations
+  }
 
   if (dataBundle.logistics?.length) {
     const l = dataBundle.logistics;
@@ -262,16 +264,17 @@ const sampleData = {
   ]
 };
 
-runSWOTAnalysis(sampleData, { companyName: "Acme Precision Mfg", topN: 3 })
-  .then(result => {
-    console.log("\n=== SWOT ANALYSIS ===\n");
-    console.log("SUMMARY:", result.summary);
-    console.log("TOP PRIORITY:", result.top_priority);
-    ["strengths","weaknesses","opportunities","threats"].forEach(q => {
-      console.log(`\n${q.toUpperCase()}:`);
-      result[q].forEach(f => console.log(`  • ${f.finding} [${f.metric}]`));
-    });
-  })
-  .catch(err => console.error("Analysis error:", err));
+// Example usage — comment out when deployed (auto-runs on every require otherwise)
+// runSWOTAnalysis(sampleData, { companyName: "Acme Precision Mfg", topN: 3 })
+//   .then(result => {
+//     console.log("\n=== SWOT ANALYSIS ===\n");
+//     console.log("SUMMARY:", result.summary);
+//     console.log("TOP PRIORITY:", result.top_priority);
+//     ["strengths","weaknesses","opportunities","threats"].forEach(q => {
+//       console.log(`\n${q.toUpperCase()}:`);
+//       result[q].forEach(f => console.log(`  • ${f.finding} [${f.metric}]`));
+//     });
+//   })
+//   .catch(err => console.error("Analysis error:", err));
 
 module.exports = { runSWOTAnalysis, buildDataSummary };

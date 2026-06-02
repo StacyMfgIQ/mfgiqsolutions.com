@@ -1,0 +1,648 @@
+
+<h2 class="sr-only">MfgIQ CRM — customer dashboard with billing, subscription plans, feature activation history, and invoice tracking</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.topbar{background:#1A2E44;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0}
+.topbar-logo{color:#fff;font-size:15px;font-weight:500}
+.topbar-meta{color:#9FE1CB;font-size:11px}
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:14px 14px 0}
+.met{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px}
+.met-l{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+.met-v{font-size:22px;font-weight:500}
+.met-s{font-size:11px;margin-top:2px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 8px;gap:8px;flex-wrap:wrap}
+.toolbar-left{display:flex;gap:8px;align-items:center;flex:1}
+.toolbar-left input{flex:1;font-size:13px}
+.toolbar-left select{font-size:13px;width:130px}
+.toolbar-right{display:flex;gap:6px;align-items:center}
+.tab-btn{font-size:12px;font-weight:500;padding:0 14px;height:36px;background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;white-space:nowrap}
+.tab-btn.active{background:#1A2E44;color:#fff;border-color:#1A2E44}
+.tab-btn:hover:not(.active){background:var(--color-background-secondary)}
+.add-btn{font-size:12px;font-weight:500;padding:0 14px;height:36px;background:#0F6E56;color:#fff;border:none;border-radius:var(--border-radius-md);cursor:pointer;white-space:nowrap}
+.add-btn:hover{background:#085041}
+.tbl-wrap{padding:0 14px 14px}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{background:#1A2E44;color:#fff;font-size:10px;font-weight:500;padding:7px 8px;text-align:left}
+td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr.past-due-row td{background:#FFF5F5}
+tr.overdue-inv td{background:#FFF5F5}
+.pill{display:inline-block;font-size:9px;font-weight:500;padding:2px 6px;border-radius:99px;white-space:nowrap}
+.pg{background:#E1F5EE;color:#085041}.pr{background:#FCEBEB;color:#791F1F}
+.pa{background:#FAEEDA;color:#633806}.pp{background:#EEEDFE;color:#3C3489}
+.pn{background:#E6EDF4;color:#1A2E44}.pgr{background:#F1EFE8;color:#444441}
+.pb{background:#E3EEF9;color:#1A4A7A}
+.view-btn{font-size:11px;padding:3px 10px;cursor:pointer;border-radius:var(--border-radius-md);background:transparent;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary)}
+.view-btn:hover{background:var(--color-background-secondary)}
+.pay-btn{font-size:11px;padding:3px 10px;cursor:pointer;border-radius:var(--border-radius-md);background:#0F6E56;border:none;color:#fff}
+.pay-btn:hover{background:#085041}
+.detail-panel{padding:14px;border-top:0.5px solid var(--color-border-tertiary)}
+.dp-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.dp-name{font-size:16px;font-weight:500;color:var(--color-text-primary)}
+.dp-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.close-btn{font-size:12px;padding:4px 12px;cursor:pointer;border-radius:var(--border-radius-md);background:transparent;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary)}
+.close-btn:hover{background:var(--color-background-secondary)}
+.dp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.dp-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.dp-card-l{font-size:10px;color:var(--color-text-secondary);margin-bottom:3px}
+.dp-card-v{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.sec-label{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px;padding-bottom:5px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.sec-label-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:5px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.sec-label-row span{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em}
+.feat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:14px}
+.feat-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start}
+.feat-name{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.feat-date{font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+.hist-row{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px}
+.hist-row:last-child{border-bottom:none}
+.hist-date{color:var(--color-text-secondary);width:90px;flex-shrink:0}
+.hist-event{color:var(--color-text-primary);flex:1}
+.inv-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px}
+.inv-table th{background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:500;padding:6px 8px;text-align:left;border-bottom:0.5px solid var(--color-border-tertiary)}
+.inv-table td{padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle}
+.inv-table tr:last-child td{border-bottom:none}
+.modal-overlay{display:none;position:absolute;top:0;left:0;width:100%;min-height:100%;background:rgba(0,0,0,0.4);z-index:10;align-items:flex-start;justify-content:center;padding-top:40px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);padding:20px;width:100%;max-width:520px}
+.modal h3{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:14px}
+.form-row{margin-bottom:10px}
+.form-row label{display:block;font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.form-row input,.form-row select,.form-row textarea{width:100%;font-size:13px}
+.form-row textarea{resize:vertical;min-height:56px;padding:6px 8px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-family:var(--font-sans);font-size:12px;color:var(--color-text-primary);background:var(--color-background-primary)}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.feat-checks{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}
+.feat-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-primary);cursor:pointer}
+.feat-check input{width:14px;height:14px;cursor:pointer}
+.modal-btns{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.modal-btns button{font-size:12px;padding:6px 16px;border-radius:var(--border-radius-md);cursor:pointer}
+.btn-cancel{background:transparent;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary)}
+.btn-save{background:#0F6E56;color:#fff;border:none;font-weight:500}
+.btn-save:hover{background:#085041}
+.empty-state{text-align:center;padding:40px 20px;color:var(--color-text-secondary);font-size:13px}
+.info-banner{background:#E3EEF9;border-radius:var(--border-radius-md);padding:8px 12px;font-size:11px;color:#1A4A7A;margin-bottom:12px}
+@media(prefers-color-scheme:dark){
+.pg{background:#085041;color:#9FE1CB}.pr{background:#791F1F;color:#F7C1C1}
+.pa{background:#633806;color:#FAC775}.pp{background:#3C3489;color:#CECBF6}
+.pn{background:#1A2E44;color:#9FE1CB}.pgr{background:#444441;color:#D3D1C7}
+.pb{background:#1A3A5C;color:#A8C8E8}
+tr.past-due-row td,tr.overdue-inv td{background:rgba(163,45,45,.08)}
+.info-banner{background:#1A3A5C;color:#A8C8E8}
+}
+</style>
+
+<div style="position:relative;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:visible">
+
+<div class="topbar">
+  <span class="topbar-logo">MfgIQ CRM</span>
+  <span class="topbar-meta" id="top-date"></span>
+</div>
+
+<div class="metrics" id="metrics-strip"></div>
+
+<div class="toolbar">
+  <div class="toolbar-left" id="toolbar-search">
+    <input type="text" id="search" placeholder="Search customers..." style="max-width:200px">
+    <select id="filter-plan">
+      <option value="">All plans</option>
+      <option value="core">Core</option>
+      <option value="assist">Assist</option>
+      <option value="quality">Quality</option>
+      <option value="bundle">Bundle</option>
+    </select>
+    <select id="filter-status">
+      <option value="">All statuses</option>
+      <option value="current">Current</option>
+      <option value="past-due">Past due</option>
+      <option value="trial">Trial</option>
+    </select>
+  </div>
+  <div class="toolbar-left" id="toolbar-inv-search" style="display:none">
+    <input type="text" id="inv-search" placeholder="Search invoices..." style="max-width:200px">
+    <select id="inv-filter-status">
+      <option value="">All invoices</option>
+      <option value="unpaid">Unpaid</option>
+      <option value="overdue">Overdue</option>
+      <option value="paid">Paid</option>
+    </select>
+    <select id="inv-filter-method">
+      <option value="">All methods</option>
+      <option value="ach">ACH</option>
+      <option value="check">Check</option>
+      <option value="card">Card</option>
+    </select>
+  </div>
+  <div class="toolbar-right">
+    <button class="tab-btn active" id="tab-customers" onclick="switchView('customers')">Customers</button>
+    <button class="tab-btn" id="tab-invoices" onclick="switchView('invoices')">Invoices</button>
+    <button class="add-btn" id="main-add-btn" onclick="openModal()">+ Add customer</button>
+    <button class="add-btn" id="inv-add-btn" style="display:none" onclick="openInvoiceModal(null,null)">+ New invoice</button>
+  </div>
+</div>
+
+<div id="customers-view">
+  <div class="tbl-wrap">
+    <table id="customer-table">
+      <thead>
+        <tr>
+          <th style="width:18%">Company</th>
+          <th style="width:13%">Contact</th>
+          <th style="width:12%">Plan</th>
+          <th style="width:10%">Monthly</th>
+          <th style="width:10%">Balance</th>
+          <th style="width:10%">Past due</th>
+          <th style="width:9%">Next bill</th>
+          <th style="width:9%">Status</th>
+          <th style="width:9%">Action</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div id="empty-msg" class="empty-state" style="display:none">No customers yet. Click <b>+ Add customer</b> to get started.</div>
+  </div>
+</div>
+
+<div id="invoices-view" style="display:none">
+  <div class="tbl-wrap">
+    <table id="invoice-table">
+      <thead>
+        <tr>
+          <th style="width:10%">Invoice #</th>
+          <th style="width:18%">Customer</th>
+          <th style="width:9%">Date</th>
+          <th style="width:9%">Due date</th>
+          <th style="width:10%">Amount</th>
+          <th style="width:10%">Method</th>
+          <th style="width:9%">Paid date</th>
+          <th style="width:10%">Status</th>
+          <th style="width:15%">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="invoice-body"></tbody>
+    </table>
+    <div id="inv-empty-msg" class="empty-state" style="display:none">No invoices yet. Click <b>+ New invoice</b> to create one.</div>
+  </div>
+</div>
+
+<div class="detail-panel" id="detail-panel" style="display:none"></div>
+
+<!-- Customer modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Add new customer</h3>
+    <div class="form-2col">
+      <div class="form-row"><label>Company name</label><input id="f-company" type="text" placeholder="Precision Parts Inc."></div>
+      <div class="form-row"><label>Primary contact</label><input id="f-contact" type="text" placeholder="Dan Smith"></div>
+    </div>
+    <div class="form-2col">
+      <div class="form-row"><label>Email</label><input id="f-email" type="email" placeholder="dan@shop.com"></div>
+      <div class="form-row"><label>Phone</label><input id="f-phone" type="tel" placeholder="586-555-0100"></div>
+    </div>
+    <div class="form-2col">
+      <div class="form-row"><label>Customer since</label><input id="f-since" type="date"></div>
+      <div class="form-row"><label>Status</label>
+        <select id="f-status">
+          <option value="current">Current</option>
+          <option value="trial">Trial</option>
+          <option value="past-due">Past due</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-2col">
+      <div class="form-row"><label>Monthly amount ($)</label><input id="f-monthly" type="number" placeholder="599" min="0"></div>
+      <div class="form-row"><label>Balance owed ($)</label><input id="f-balance" type="number" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-2col">
+      <div class="form-row"><label>Past due amount ($)</label><input id="f-pastdue" type="number" placeholder="0" min="0"></div>
+      <div class="form-row"><label>Next billing date</label><input id="f-nextbill" type="date"></div>
+    </div>
+    <div class="form-row">
+      <label>Active features / plans</label>
+      <div class="feat-checks" id="feat-checks"></div>
+    </div>
+    <div class="form-row"><label>Notes</label><input id="f-notes" type="text" placeholder="Any notes about this customer..."></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveCustomer()">Save customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice modal -->
+<div class="modal-overlay" id="inv-modal-overlay">
+  <div class="modal">
+    <h3 id="inv-modal-title">Create invoice</h3>
+    <div class="info-banner" id="inv-modal-banner" style="display:none"></div>
+    <div class="form-2col">
+      <div class="form-row"><label>Invoice #</label><input id="if-num" type="text" placeholder="INV-001"></div>
+      <div class="form-row"><label>Customer</label><select id="if-customer"></select></div>
+    </div>
+    <div class="form-3col">
+      <div class="form-row"><label>Invoice date</label><input id="if-date" type="date"></div>
+      <div class="form-row"><label>Due date</label><input id="if-due" type="date"></div>
+      <div class="form-row"><label>Amount ($)</label><input id="if-amount" type="number" placeholder="0" min="0" step="0.01"></div>
+    </div>
+    <div class="form-2col">
+      <div class="form-row"><label>Payment method</label>
+        <select id="if-method">
+          <option value="">— not yet paid —</option>
+          <option value="ach">ACH / Bank transfer</option>
+          <option value="check">Check</option>
+          <option value="card">Credit / Debit card</option>
+        </select>
+      </div>
+      <div class="form-row" id="if-paiddate-row" style="display:none"><label>Date paid</label><input id="if-paiddate" type="date"></div>
+    </div>
+    <div class="form-row"><label>Notes / memo</label><textarea id="if-notes" placeholder="e.g. June subscription, Core Plus plan..."></textarea></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeInvoiceModal()">Cancel</button>
+      <button class="btn-save" onclick="saveInvoice()">Save invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mark paid modal -->
+<div class="modal-overlay" id="pay-modal-overlay">
+  <div class="modal" style="max-width:380px">
+    <h3>Record payment</h3>
+    <p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px" id="pay-modal-sub"></p>
+    <div class="form-row"><label>Payment method</label>
+      <select id="pm-method">
+        <option value="ach">ACH / Bank transfer</option>
+        <option value="check">Check</option>
+        <option value="card">Credit / Debit card</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Date received</label><input id="pm-date" type="date"></div>
+    <div class="form-row"><label>Notes (optional)</label><input id="pm-notes" type="text" placeholder="Check #1042, reference number, etc."></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closePayModal()">Cancel</button>
+      <button class="btn-save" onclick="confirmMarkPaid()">Mark paid</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const FEATURES = [
+  {id:'core_starter',name:'Core — Starter',price:299},
+  {id:'core_plus',name:'Core — Plus',price:599},
+  {id:'core_growth',name:'Core — Growth',price:999},
+  {id:'assist_solo',name:'Assist — Solo',price:199},
+  {id:'assist_duo',name:'Assist — Duo',price:349},
+  {id:'assist_team',name:'Assist — Team',price:599},
+  {id:'quality_solo',name:'Quality — Solo',price:199},
+  {id:'quality_pro',name:'Quality — Pro',price:299},
+  {id:'bundle',name:'Full Bundle',price:1199},
+  {id:'daily_brief',name:'Daily ops briefing',price:99},
+  {id:'weekly_digest',name:'Weekly digest',price:99},
+  {id:'finance_report',name:'Finance report',price:149},
+  {id:'sales_report',name:'Sales report',price:149},
+  {id:'ask_data',name:'Ask-your-data',price:199},
+  {id:'quote_assist',name:'Quote assistant',price:199},
+  {id:'alerts',name:'At-risk alerts',price:99},
+  {id:'monthly_deck',name:'Monthly review deck',price:249},
+  {id:'sched_dash',name:'Scheduling dashboard',price:0},
+];
+
+let customers = [];
+let invoices  = [];
+let editingId = null;
+let detailId  = null;
+let payingInvId = null;
+let currentView = 'customers';
+
+// ── Storage ────────────────────────────────────────────────────────────────
+async function load() {
+  try { const r = await window.storage.get('mfgiq-crm-customers'); if(r&&r.value) customers=JSON.parse(r.value); } catch(e){ customers=[]; }
+  try { const r = await window.storage.get('mfgiq-crm-invoices');  if(r&&r.value) invoices=JSON.parse(r.value);  } catch(e){ invoices=[];  }
+  render();
+}
+async function saveCustomers(){ try{ await window.storage.set('mfgiq-crm-customers',JSON.stringify(customers)); }catch(e){} }
+async function saveInvoices() { try{ await window.storage.set('mfgiq-crm-invoices', JSON.stringify(invoices));  }catch(e){} }
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(n){ return '$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function fmtDate(d){ if(!d) return '—'; return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function addDays(ds,n){ const d=new Date(ds+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
+
+// ── Invoice status ─────────────────────────────────────────────────────────
+function invStatus(inv){
+  if(inv.paidDate||inv.method) return 'paid';
+  if(!inv.dueDate) return 'unpaid';
+  return new Date(inv.dueDate+'T00:00:00')<new Date() ? 'overdue' : 'unpaid';
+}
+function invStatusPill(inv){
+  const s=invStatus(inv);
+  if(s==='paid')    return '<span class="pill pg">Paid</span>';
+  if(s==='overdue') return '<span class="pill pr">Overdue</span>';
+  return '<span class="pill pa">Unpaid</span>';
+}
+function methodLabel(m){
+  if(m==='ach')   return '<span class="pill pb">ACH</span>';
+  if(m==='check') return '<span class="pill pgr">Check</span>';
+  if(m==='card')  return '<span class="pill pn">Card</span>';
+  return '—';
+}
+function getNextInvoiceNum(){
+  const nums=invoices.map(i=>{ const m=(i.invoiceNum||'').match(/(\d+)$/); return m?parseInt(m[1]):0; });
+  return 'INV-'+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
+}
+
+// ── View toggle ────────────────────────────────────────────────────────────
+function switchView(v){
+  currentView=v;
+  document.getElementById('customers-view').style.display=v==='customers'?'':'none';
+  document.getElementById('invoices-view').style.display =v==='invoices' ?'':'none';
+  document.getElementById('toolbar-search').style.display    =v==='customers'?'':'none';
+  document.getElementById('toolbar-inv-search').style.display=v==='invoices' ?'':'none';
+  document.getElementById('main-add-btn').style.display=v==='customers'?'':'none';
+  document.getElementById('inv-add-btn').style.display =v==='invoices' ?'':'none';
+  document.getElementById('tab-customers').classList.toggle('active',v==='customers');
+  document.getElementById('tab-invoices').classList.toggle('active',v==='invoices');
+  document.getElementById('detail-panel').style.display='none'; detailId=null;
+  if(v==='invoices') renderInvoiceTable();
+}
+
+// ── Plan / status pills ────────────────────────────────────────────────────
+function planLabel(c){
+  const a=c.features||[];
+  if(a.includes('bundle')) return {text:'Bundle',cls:'pp'};
+  const hasQ=a.some(f=>f.startsWith('quality')),hasA=a.some(f=>f.startsWith('assist')),hasC=a.some(f=>f.startsWith('core'));
+  if(hasQ&&hasA&&hasC) return {text:'Bundle',cls:'pp'};
+  if(hasQ&&hasA) return {text:'Assist+Quality',cls:'pp'};
+  if(hasA) return {text:'Assist',cls:'pn'};
+  if(hasQ) return {text:'Quality',cls:'pa'};
+  if(hasC) return {text:'Core',cls:'pg'};
+  const add=a.filter(f=>!f.startsWith('core')&&!f.startsWith('assist')&&!f.startsWith('quality')&&f!=='bundle');
+  return add.length?{text:'Add-ons ('+add.length+')',cls:'pgr'}:{text:'—',cls:'pgr'};
+}
+function statusPill(s){
+  if(s==='current')  return '<span class="pill pg">Current</span>';
+  if(s==='past-due') return '<span class="pill pr">Past due</span>';
+  if(s==='trial')    return '<span class="pill pa">Trial</span>';
+  return '<span class="pill pgr">Inactive</span>';
+}
+
+// ── Metrics ────────────────────────────────────────────────────────────────
+function renderMetrics(){
+  const active=customers.filter(c=>c.status==='current'||c.status==='trial');
+  const mrr=active.reduce((s,c)=>s+Number(c.monthly||0),0);
+  const pdTotal=customers.reduce((s,c)=>s+Number(c.pastdue||0),0);
+  const pdCount=customers.filter(c=>Number(c.pastdue||0)>0).length;
+  const openInvs=invoices.filter(i=>invStatus(i)!=='paid');
+  const openTotal=openInvs.reduce((s,i)=>s+Number(i.amount||0),0);
+  const overdueCt=invoices.filter(i=>invStatus(i)==='overdue').length;
+  document.getElementById('metrics-strip').innerHTML=`
+    <div class="met"><p class="met-l">Total customers</p><p class="met-v" style="color:#1A2E44">${customers.length}</p><p class="met-s" style="color:#5F5E5A">${active.length} active</p></div>
+    <div class="met"><p class="met-l">Monthly recurring</p><p class="met-v" style="color:#0F6E56">${fmt(mrr)}</p><p class="met-s" style="color:#5F5E5A">MRR</p></div>
+    <div class="met"><p class="met-l">Annual run rate</p><p class="met-v" style="color:#1A2E44">${fmt(mrr*12)}</p><p class="met-s" style="color:#5F5E5A">ARR</p></div>
+    <div class="met"><p class="met-l">Past due balance</p><p class="met-v" style="color:${pdTotal>0?'#A32D2D':'#0F6E56'}">${fmt(pdTotal)}</p><p class="met-s" style="color:${pdTotal>0?'#854F0B':'#5F5E5A'}">${pdCount} account${pdCount!==1?'s':''}</p></div>
+    <div class="met" style="cursor:pointer" onclick="switchView('invoices')"><p class="met-l">Open invoices</p><p class="met-v" style="color:${openTotal>0?'#A32D2D':'#0F6E56'}">${fmt(openTotal)}</p><p class="met-s" style="color:${overdueCt>0?'#854F0B':'#5F5E5A'}">${openInvs.length} open · ${overdueCt} overdue</p></div>`;
+}
+
+// ── Customer table ─────────────────────────────────────────────────────────
+function renderTable(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const fp=document.getElementById('filter-plan').value;
+  const fs=document.getElementById('filter-status').value;
+  let f=customers.filter(c=>{
+    const ms=!q||(c.company||'').toLowerCase().includes(q)||(c.contact||'').toLowerCase().includes(q);
+    return ms&&(!fs||c.status===fs)&&(!fp||(c.features||[]).some(x=>x.startsWith(fp)));
+  });
+  const tb=document.getElementById('table-body'),em=document.getElementById('empty-msg');
+  if(!f.length){tb.innerHTML='';em.style.display='block';return;} em.style.display='none';
+  tb.innerHTML=f.map(c=>{
+    const isPD=Number(c.pastdue||0)>0,p=planLabel(c);
+    return `<tr class="${isPD?'past-due-row':''}">
+      <td title="${c.company||''}" style="font-weight:500">${c.company||'—'}</td>
+      <td title="${c.contact||''}">${c.contact||'—'}</td>
+      <td><span class="pill ${p.cls}">${p.text}</span></td>
+      <td>${fmt(c.monthly)}</td><td>${fmt(c.balance)}</td>
+      <td style="color:${isPD?'#A32D2D':'var(--color-text-secondary)'};font-weight:${isPD?500:400}">${isPD?fmt(c.pastdue):'—'}</td>
+      <td>${fmtDate(c.nextbill)}</td><td>${statusPill(c.status)}</td>
+      <td><button class="view-btn" onclick="showDetail('${c.id}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Invoice table ──────────────────────────────────────────────────────────
+function renderInvoiceTable(){
+  const q=document.getElementById('inv-search').value.toLowerCase();
+  const fs=document.getElementById('inv-filter-status').value;
+  const fm=document.getElementById('inv-filter-method').value;
+  let f=invoices.filter(i=>{
+    const c=customers.find(x=>x.id===i.customerId);
+    const ms=!q||(i.invoiceNum||'').toLowerCase().includes(q)||(c?.company||'').toLowerCase().includes(q);
+    const st=invStatus(i);
+    return ms&&(!fs||st===fs)&&(!fm||(i.method||'')===fm);
+  }).sort((a,b)=>{
+    const o={overdue:0,unpaid:1,paid:2};
+    const da=o[invStatus(a)]??2,db=o[invStatus(b)]??2;
+    return da!==db?da-db:(a.dueDate||'').localeCompare(b.dueDate||'');
+  });
+  const tb=document.getElementById('invoice-body'),em=document.getElementById('inv-empty-msg');
+  if(!f.length){tb.innerHTML='';em.style.display='block';return;} em.style.display='none';
+  tb.innerHTML=f.map(i=>{
+    const c=customers.find(x=>x.id===i.customerId),st=invStatus(i);
+    return `<tr class="${st==='overdue'?'overdue-inv':''}">
+      <td style="font-weight:500">${i.invoiceNum||'—'}</td>
+      <td title="${c?.company||''}">${c?.company||'Unknown'}</td>
+      <td>${fmtDate(i.date)}</td>
+      <td style="color:${st==='overdue'?'#A32D2D':'inherit'};font-weight:${st==='overdue'?500:400}">${fmtDate(i.dueDate)}</td>
+      <td style="font-weight:500">${fmt(i.amount)}</td>
+      <td>${methodLabel(i.method)}</td>
+      <td>${fmtDate(i.paidDate)}</td>
+      <td>${invStatusPill(i)}</td>
+      <td style="white-space:nowrap">
+        ${st!=='paid'?`<button class="pay-btn" style="margin-right:4px" onclick="openPayModal('${i.id}')">Mark paid</button>`:''}
+        <button class="view-btn" onclick="openInvoiceModal(null,'${i.id}')">Edit</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function render(){
+  renderMetrics(); renderTable();
+  if(currentView==='invoices') renderInvoiceTable();
+  document.getElementById('top-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+}
+
+// ── Customer detail ────────────────────────────────────────────────────────
+function showDetail(id){
+  const c=customers.find(x=>x.id===id); if(!c) return;
+  detailId=id;
+  const features=c.features||[],history=c.history||[];
+  const custInvs=invoices.filter(i=>i.customerId===id);
+  const featHtml=FEATURES.filter(f=>features.includes(f.id)).map(f=>{
+    const ev=history.filter(h=>h.featureId===f.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const last=ev[0],isOn=!last||last.action==='enabled';
+    return `<div class="feat-card"><div><div class="feat-name">${f.name}</div><div class="feat-date">${isOn?'Active since':'Turned off'} ${fmtDate(last?last.date:c.since)}</div></div><span class="pill ${isOn?'pg':'pr'}">${isOn?'On':'Off'}</span></div>`;
+  }).join('');
+  const histHtml=history.length?history.slice().reverse().map(h=>{
+    const f=FEATURES.find(x=>x.id===h.featureId),col=h.action==='enabled'?'#0F6E56':'#A32D2D';
+    return `<div class="hist-row"><span class="hist-date">${fmtDate(h.date)}</span><span class="hist-event" style="color:${col}">${h.action==='enabled'?'Enabled':'Disabled'}: ${f?f.name:h.featureId}</span></div>`;
+  }).join(''):'<p style="font-size:12px;color:var(--color-text-secondary)">No feature history yet.</p>';
+  const invRows=custInvs.length?custInvs.sort((a,b)=>({overdue:0,unpaid:1,paid:2})[invStatus(a)]-({overdue:0,unpaid:1,paid:2})[invStatus(b)]).map(i=>{
+    const st=invStatus(i);
+    return `<tr><td style="font-weight:500">${i.invoiceNum||'—'}</td><td>${fmtDate(i.date)}</td>
+      <td style="color:${st==='overdue'?'#A32D2D':'inherit'}">${fmtDate(i.dueDate)}</td>
+      <td>${fmt(i.amount)}</td><td>${methodLabel(i.method)}</td><td>${invStatusPill(i)}</td>
+      <td style="white-space:nowrap">${st!=='paid'?`<button class="pay-btn" style="margin-right:4px;font-size:10px;padding:2px 8px" onclick="openPayModal('${i.id}')">Mark paid</button>`:''}<button class="view-btn" style="font-size:10px;padding:2px 8px" onclick="openInvoiceModal('${id}','${i.id}')">Edit</button></td></tr>`;
+  }).join(''):`<tr><td colspan="7" style="padding:12px;text-align:center;color:var(--color-text-secondary);font-size:12px">No invoices yet for this customer.</td></tr>`;
+  const isPD=Number(c.pastdue||0)>0,p=planLabel(c);
+  document.getElementById('detail-panel').innerHTML=`
+    <div class="dp-header">
+      <div><div class="dp-name">${c.company||'—'}</div><div class="dp-sub">${c.contact||''} ${c.email?'· '+c.email:''} ${c.phone?'· '+c.phone:''}</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="view-btn" onclick="openInvoiceModal('${id}',null)">+ Invoice</button>
+        <button class="view-btn" onclick="openModal('${id}')">Edit</button>
+        <button class="close-btn" onclick="closeDetail()">Close</button>
+      </div>
+    </div>
+    <div class="dp-grid">
+      <div class="dp-card"><div class="dp-card-l">Customer since</div><div class="dp-card-v">${fmtDate(c.since)}</div></div>
+      <div class="dp-card"><div class="dp-card-l">Monthly recurring</div><div class="dp-card-v" style="color:#0F6E56">${fmt(c.monthly)}</div></div>
+      <div class="dp-card"><div class="dp-card-l">Current balance</div><div class="dp-card-v">${fmt(c.balance)}</div></div>
+      <div class="dp-card"><div class="dp-card-l">Past due</div><div class="dp-card-v" style="color:${isPD?'#A32D2D':'inherit'}">${isPD?fmt(c.pastdue):'None'}</div></div>
+      <div class="dp-card"><div class="dp-card-l">Next billing date</div><div class="dp-card-v">${fmtDate(c.nextbill)}</div></div>
+      <div class="dp-card"><div class="dp-card-l">Status</div><div class="dp-card-v">${statusPill(c.status)}</div></div>
+    </div>
+    ${c.notes?`<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-secondary);margin-bottom:14px">${c.notes}</div>`:''}
+    <div class="sec-label-row"><span>Invoices (${custInvs.length})</span></div>
+    <table class="inv-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Due date</th><th>Amount</th><th>Method</th><th>Status</th><th>Actions</th></tr></thead><tbody>${invRows}</tbody></table>
+    <div class="sec-label" style="margin-bottom:8px">Active features</div>
+    ${features.length===0?'<p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px">No features assigned yet.</p>':''}
+    <div class="feat-grid">${featHtml}</div>
+    <div class="sec-label" style="margin-bottom:8px">Feature history</div>${histHtml}`;
+  document.getElementById('detail-panel').style.display='block';
+  document.getElementById('detail-panel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeDetail(){ document.getElementById('detail-panel').style.display='none'; detailId=null; }
+
+// ── Customer modal ─────────────────────────────────────────────────────────
+function buildFeatChecks(sel){
+  document.getElementById('feat-checks').innerHTML=FEATURES.map(f=>`<label class="feat-check"><input type="checkbox" value="${f.id}" ${(sel||[]).includes(f.id)?'checked':''}>${f.name}${f.price?' ($'+f.price+')':''}</label>`).join('');
+}
+function openModal(id){
+  editingId=id||null;
+  document.getElementById('modal-title').textContent=id?'Edit customer':'Add new customer';
+  const t=today();
+  if(id){
+    const c=customers.find(x=>x.id===id); if(!c) return;
+    document.getElementById('f-company').value=c.company||''; document.getElementById('f-contact').value=c.contact||'';
+    document.getElementById('f-email').value=c.email||'';     document.getElementById('f-phone').value=c.phone||'';
+    document.getElementById('f-since').value=c.since||t;      document.getElementById('f-status').value=c.status||'current';
+    document.getElementById('f-monthly').value=c.monthly||''; document.getElementById('f-balance').value=c.balance||'';
+    document.getElementById('f-pastdue').value=c.pastdue||''; document.getElementById('f-nextbill').value=c.nextbill||'';
+    document.getElementById('f-notes').value=c.notes||'';     buildFeatChecks(c.features||[]);
+  } else {
+    ['f-company','f-contact','f-email','f-phone','f-monthly','f-balance','f-pastdue','f-notes'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('f-since').value=t; document.getElementById('f-status').value='current';
+    document.getElementById('f-nextbill').value=''; buildFeatChecks([]);
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); editingId=null; }
+function saveCustomer(){
+  const company=document.getElementById('f-company').value.trim();
+  if(!company){alert('Company name is required.');return;}
+  const t=today(),nf=Array.from(document.querySelectorAll('#feat-checks input:checked')).map(x=>x.value);
+  if(editingId){
+    const idx=customers.findIndex(x=>x.id===editingId); if(idx<0) return;
+    const old=customers[idx],of2=old.features||[],hist=[...(old.history||[])];
+    nf.forEach(f=>{if(!of2.includes(f)) hist.push({featureId:f,action:'enabled',date:t});});
+    of2.forEach(f=>{if(!nf.includes(f)) hist.push({featureId:f,action:'disabled',date:t});});
+    customers[idx]={...old,company,contact:document.getElementById('f-contact').value.trim(),email:document.getElementById('f-email').value.trim(),phone:document.getElementById('f-phone').value.trim(),since:document.getElementById('f-since').value,status:document.getElementById('f-status').value,monthly:document.getElementById('f-monthly').value||0,balance:document.getElementById('f-balance').value||0,pastdue:document.getElementById('f-pastdue').value||0,nextbill:document.getElementById('f-nextbill').value,notes:document.getElementById('f-notes').value.trim(),features:nf,history:hist};
+    if(detailId===editingId) showDetail(editingId);
+  } else {
+    const id='c_'+Date.now(),hist=nf.map(f=>({featureId:f,action:'enabled',date:t}));
+    customers.push({id,company,contact:document.getElementById('f-contact').value.trim(),email:document.getElementById('f-email').value.trim(),phone:document.getElementById('f-phone').value.trim(),since:document.getElementById('f-since').value||t,status:document.getElementById('f-status').value,monthly:document.getElementById('f-monthly').value||0,balance:document.getElementById('f-balance').value||0,pastdue:document.getElementById('f-pastdue').value||0,nextbill:document.getElementById('f-nextbill').value,notes:document.getElementById('f-notes').value.trim(),features:nf,history:hist});
+  }
+  saveCustomers(); closeModal(); render();
+}
+
+// ── Invoice modal ──────────────────────────────────────────────────────────
+function populateCustDropdown(selId){
+  document.getElementById('if-customer').innerHTML=customers.length
+    ?customers.map(c=>`<option value="${c.id}" ${c.id===selId?'selected':''}>${c.company}</option>`).join('')
+    :'<option value="">— add a customer first —</option>';
+}
+function openInvoiceModal(customerId,invoiceId){
+  const t=today();
+  document.getElementById('if-paiddate-row').style.display='none';
+  document.getElementById('inv-modal-banner').style.display='none';
+  if(invoiceId){
+    const inv=invoices.find(i=>i.id===invoiceId); if(!inv) return;
+    document.getElementById('inv-modal-title').textContent='Edit invoice';
+    populateCustDropdown(inv.customerId);
+    document.getElementById('if-num').value=inv.invoiceNum||''; document.getElementById('if-date').value=inv.date||t;
+    document.getElementById('if-due').value=inv.dueDate||'';    document.getElementById('if-amount').value=inv.amount||'';
+    document.getElementById('if-method').value=inv.method||''; document.getElementById('if-paiddate').value=inv.paidDate||'';
+    document.getElementById('if-notes').value=inv.notes||'';
+    if(inv.method) document.getElementById('if-paiddate-row').style.display='';
+    document.getElementById('inv-modal-overlay')._editId=invoiceId;
+  } else {
+    document.getElementById('inv-modal-title').textContent='Create invoice';
+    populateCustDropdown(customerId);
+    document.getElementById('if-num').value=getNextInvoiceNum(); document.getElementById('if-date').value=t;
+    document.getElementById('if-due').value=addDays(t,30);       document.getElementById('if-amount').value='';
+    document.getElementById('if-method').value='';               document.getElementById('if-paiddate').value=t;
+    document.getElementById('if-notes').value='';
+    if(customerId){
+      const c=customers.find(x=>x.id===customerId);
+      if(c&&c.monthly){ document.getElementById('if-amount').value=c.monthly; const b=document.getElementById('inv-modal-banner'); b.textContent='Pre-filled with '+c.company+"'s monthly amount of "+fmt(c.monthly)+'.'; b.style.display=''; }
+    }
+    document.getElementById('inv-modal-overlay')._editId=null;
+  }
+  document.getElementById('inv-modal-overlay').classList.add('open');
+}
+document.getElementById('if-method').addEventListener('change',function(){ document.getElementById('if-paiddate-row').style.display=this.value?'':'none'; });
+function closeInvoiceModal(){ document.getElementById('inv-modal-overlay').classList.remove('open'); }
+function saveInvoice(){
+  const cid=document.getElementById('if-customer').value,amt=document.getElementById('if-amount').value;
+  if(!cid){alert('Please select a customer.');return;} if(!amt){alert('Amount is required.');return;}
+  const editId=document.getElementById('inv-modal-overlay')._editId;
+  const method=document.getElementById('if-method').value;
+  const data={customerId:cid,invoiceNum:document.getElementById('if-num').value.trim(),date:document.getElementById('if-date').value,dueDate:document.getElementById('if-due').value,amount:parseFloat(amt)||0,method,paidDate:method?document.getElementById('if-paiddate').value:'',notes:document.getElementById('if-notes').value.trim()};
+  if(editId){ const idx=invoices.findIndex(i=>i.id===editId); if(idx>=0) invoices[idx]={...invoices[idx],...data}; }
+  else invoices.push({id:'inv_'+Date.now(),...data});
+  saveInvoices(); closeInvoiceModal(); render();
+  if(detailId===cid) showDetail(cid);
+}
+
+// ── Mark paid modal ────────────────────────────────────────────────────────
+function openPayModal(invId){
+  payingInvId=invId;
+  const inv=invoices.find(i=>i.id===invId),c=customers.find(x=>x.id===inv?.customerId);
+  document.getElementById('pay-modal-sub').textContent=(inv?.invoiceNum||'Invoice')+' · '+(c?.company||'')+' · '+fmt(inv?.amount);
+  document.getElementById('pm-method').value='ach'; document.getElementById('pm-date').value=today(); document.getElementById('pm-notes').value='';
+  document.getElementById('pay-modal-overlay').classList.add('open');
+}
+function closePayModal(){ document.getElementById('pay-modal-overlay').classList.remove('open'); payingInvId=null; }
+function confirmMarkPaid(){
+  if(!payingInvId) return;
+  const idx=invoices.findIndex(i=>i.id===payingInvId); if(idx<0) return;
+  invoices[idx].method=document.getElementById('pm-method').value;
+  invoices[idx].paidDate=document.getElementById('pm-date').value;
+  const note=document.getElementById('pm-notes').value.trim();
+  if(note) invoices[idx].notes=(invoices[idx].notes?invoices[idx].notes+' · ':'')+note;
+  saveInvoices(); closePayModal(); render();
+  if(detailId) showDetail(detailId);
+}
+
+// ── Event listeners ────────────────────────────────────────────────────────
+document.getElementById('search').addEventListener('input',renderTable);
+document.getElementById('filter-plan').addEventListener('change',renderTable);
+document.getElementById('filter-status').addEventListener('change',renderTable);
+document.getElementById('inv-search').addEventListener('input',renderInvoiceTable);
+document.getElementById('inv-filter-status').addEventListener('change',renderInvoiceTable);
+document.getElementById('inv-filter-method').addEventListener('change',renderInvoiceTable);
+
+load();
+</script>

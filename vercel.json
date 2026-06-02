@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "portal.mfgiqsolutions.com" }],
+      "destination": "/portal.html"
+    }
+  ]
+}
